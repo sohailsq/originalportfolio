@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, CalendarDays, Check, Clock3, Send, X } from 'lucide-react'
 import { profile } from '../data/portfolioData.js'
 import { freelanceSettings } from '../data/freelanceConfig.js'
 import workingPortrait from '../assets/Focused Developer Coding with Laptop Stickers.png'
+import ProjectPackageModal from './ProjectPackageModal.jsx'
 import './FreelanceModal.css'
 
 export default function FreelanceModal({ open, onClose }) {
   const [selectedService, setSelectedService] = useState(freelanceSettings.services[0].id)
   const [selectedPackage, setSelectedPackage] = useState('')
+  const [activePackage, setActivePackage] = useState(null)
   const [inquiryOpen, setInquiryOpen] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', budget: '', timeline: '', description: '' })
   const dialogRef = useRef(null)
@@ -30,6 +32,8 @@ export default function FreelanceModal({ open, onClose }) {
     })
 
     const handleKeyDown = (event) => {
+      if (document.querySelector('.package-detail-dialog')) return
+
       if (event.key === 'Escape') {
         event.stopPropagation()
         onClose()
@@ -66,6 +70,7 @@ export default function FreelanceModal({ open, onClose }) {
     if (open) return
     setSelectedService(freelanceSettings.services[0].id)
     setSelectedPackage('')
+    setActivePackage(null)
     setInquiryOpen(false)
     setForm({ name: '', email: '', budget: '', timeline: '', description: '' })
   }, [open])
@@ -80,8 +85,10 @@ export default function FreelanceModal({ open, onClose }) {
   }, [inquiryOpen, open, reducedMotion])
 
   const openInquiry = () => setInquiryOpen(true)
+  const closePackageDetails = useCallback(() => setActivePackage(null), [])
 
   const selectPackage = (item) => {
+    setActivePackage(null)
     setSelectedPackage(item.id)
     setForm((current) => ({
       ...current,
@@ -227,8 +234,9 @@ export default function FreelanceModal({ open, onClose }) {
                         className={`freelance-package package-${item.id} ${item.recommended ? 'recommended' : ''} ${selectedPackage === item.id ? 'chosen' : ''}`}
                         key={item.id}
                         type="button"
-                        aria-pressed={selectedPackage === item.id}
-                        onClick={() => selectPackage(item)}
+                        aria-haspopup="dialog"
+                        aria-label={`View ${item.title} package details`}
+                        onClick={() => setActivePackage(item)}
                       >
                         {item.recommended && <span className="recommended-label">Recommended</span>}
                         <span className="package-title"><Icon size={16} />{item.title}</span>
@@ -309,6 +317,11 @@ export default function FreelanceModal({ open, onClose }) {
                 <span><strong>Thoughtful work. Built to last.</strong><small>From first idea to live deployment.</small></span>
               </div>
             </aside>
+            <ProjectPackageModal
+              packageData={activePackage}
+              onClose={closePackageDetails}
+              onChoose={selectPackage}
+            />
           </motion.div>
         </motion.div>
       )}
